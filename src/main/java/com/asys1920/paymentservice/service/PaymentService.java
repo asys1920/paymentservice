@@ -1,8 +1,6 @@
 package com.asys1920.paymentservice.service;
 
-import com.asys1920.paymentservice.model.Bill;
-import com.asys1920.paymentservice.model.PaymentProvider;
-import com.asys1920.paymentservice.model.PaymentStatus;
+import com.asys1920.model.Bill;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -10,24 +8,9 @@ import java.math.BigInteger;
 @Service
 public class PaymentService {
 
-    public void handlePayment(Bill bill, PaymentProvider provider) {
-        switch (provider) {
-            case PAYPAL:
-                if (isPayPalPaymentSuccessful(bill.getAmount())) {
-                    bill.setAmount(0);
-                    bill.setPaymentStatus(PaymentStatus.PAID);
-                } else {
-                    bill.setPaymentStatus(PaymentStatus.FAILED);
-                }
-
-            case SEPA:
-                if (isIbanValid(bill.getIban())) {
-                    bill.setAmount(0);
-                    bill.setPaymentStatus(PaymentStatus.PAID);
-                } else {
-                    bill.setPaymentStatus(PaymentStatus.FAILED);
-                }
-                break;
+    public void handleSepaPayment(Bill bill, String iban) {
+        if(isIbanValid(iban)) {
+            bill.setIsPayed(true);
         }
     }
 
@@ -66,4 +49,9 @@ public class PaymentService {
         return modulo.intValue() == 1;
     }
 
+    public void handlePaypalPayment(Bill billToPay, String paypalParam) {
+        if(isPayPalPaymentSuccessful(paypalParam.length())) {
+            billToPay.setIsPayed(true);
+        }
+    }
 }
