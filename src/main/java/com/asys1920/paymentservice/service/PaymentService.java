@@ -1,17 +1,29 @@
 package com.asys1920.paymentservice.service;
 
 import com.asys1920.model.Bill;
+import com.asys1920.paymentservice.adapter.AccountingServiceAdapter;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 
 @Service
 public class PaymentService {
+    private final AccountingServiceAdapter accountingServiceAdapter;
 
-    public void handleSepaPayment(Bill bill, String iban) {
+    public PaymentService(AccountingServiceAdapter accountingServiceAdapter) {
+        this.accountingServiceAdapter = accountingServiceAdapter;
+    }
+
+    public boolean isBillPaid(Long billId) {
+        return accountingServiceAdapter.getBill(billId).isPaid();
+    }
+
+    public Bill handleSepaPayment(Long billId, String iban) {
+        Bill billToPay = accountingServiceAdapter.getBill(billId);
         if(isIbanValid(iban)) {
-            bill.setIsPayed(true);
+            billToPay.setPaid(true);
         }
+        return accountingServiceAdapter.saveBill(billToPay);
     }
 
     public boolean isPayPalPaymentSuccessful(int magicNumber) {
@@ -49,9 +61,12 @@ public class PaymentService {
         return modulo.intValue() == 1;
     }
 
-    public void handlePaypalPayment(Bill billToPay, String paypalParam) {
+    public Bill handlePaypalPayment(Long billId, String paypalParam) {
+        Bill billToPay = accountingServiceAdapter.getBill(billId);
+
         if(isPayPalPaymentSuccessful(paypalParam.length())) {
-            billToPay.setIsPayed(true);
+            billToPay.setPaid(true);
         }
+        return accountingServiceAdapter.saveBill(billToPay);
     }
 }

@@ -2,50 +2,50 @@ package com.asys1920.paymentservice.controller;
 
 import com.asys1920.model.Bill;
 import com.asys1920.paymentservice.adapter.AccountingServiceAdapter;
-import com.asys1920.paymentservice.exceptions.BillAlreadyPayedException;
+import com.asys1920.paymentservice.exceptions.BillAlreadyPaidException;
+import com.asys1920.paymentservice.exceptions.MissingProviderInformationException;
 import com.asys1920.paymentservice.service.PaymentService;
-import com.asys1920.model.PaymentProvider;
-import com.asys1920.paymentservice.repository.BillRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
 @RestController
 public class PaymentController {
 
-    @Autowired
-    BillRepository billRepository;
-    @Autowired
-    PaymentService paymentService;
-    @Autowired
-    AccountingServiceAdapter accountingServiceAdapter;
 
-    @PostMapping(value = {"/pay/{provider}/{billId}/{iban}", "/pay/{provider}/{billId}/{paypalParam}"})
-    public ResponseEntity<Bill> payBill(@PathVariable(name = "billId") Long billId,
-                                        @PathVariable(name = "provider") PaymentProvider provider,
-                                        @PathVariable(name = "iban") Optional<String> iban,
-                                        @PathVariable(name = "paypalParam") Optional<String> paypalParam) {
+    private final PaymentService paymentService;
 
-        Bill billToPay = accountingServiceAdapter.getBill(billId);
 
-        if(billToPay.getIsPayed())
-            throw new BillAlreadyPayedException();
+    public PaymentController(PaymentService paymentService, AccountingServiceAdapter accountingServiceAdapter) {
+        this.paymentService = paymentService;
+    }
 
-        switch (provider) {
+    @PatchMapping(value = {"/pay"})
+    public ResponseEntity<Bill> payBill(@RequestBody PaymentRequest request) {
+
+        if(paymentService.isBillPaid(request.getBillId())) {
+            throw new BillAlreadyPaidException();
+        }
+        Bill returnBill = null;
+
+        switch (request.getPaymentProvider()) {
             case SEPA:
-                paymentService.handleSepaPayment(billToPay, iban.get());
+                if(request.getIban() == null || request.getIban().isEmpty()) {
+                    throw new MissingProviderInformationException();
+                }
+                returnBill = paymentService.handleSepaPayment(request.getBillId(), request.getIban());
                 break;
             case PAYPAL:
-                paymentService.handlePaypalPayment(billToPay, paypalParam.get());
+                if(request.getPaypalParam() == null || request.getPaypalParam().isEmpty()) {
+                    throw new MissingProviderInformationException();
+                }
+                returnBill = paymentService.handlePaypalPayment(request.getBillId(), request.getPaypalParam());
                 break;
             case NONE:
                 break;
         }
 
-        return new ResponseEntity<>(billToPay, HttpStatus.CREATED);
+        return new ResponseEntity<>(returnBill, HttpStatus.OK);
     }
 
 
