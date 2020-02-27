@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
 
+    private static final String PATH = "/pay";
     private final PaymentService paymentService;
 
 
@@ -32,7 +33,7 @@ public class PaymentController {
             @ApiResponse(code = 401, message = "You are not authorized to view the resource"),
             @ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
-    @PatchMapping(value = {"/pay"})
+    @PatchMapping(value = {PATH})
     public ResponseEntity<Bill> payBill(@RequestBody PaymentRequest request) throws BillAlreadyPaidException, NoBillFoundException, MissingProviderInformationException, ProviderNotFoundException {
         switch (request.getPaymentProvider()) {
             case SEPA:
