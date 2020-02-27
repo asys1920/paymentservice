@@ -2,6 +2,8 @@ package com.asys1920.paymentservice.service;
 
 import com.asys1920.model.Bill;
 import com.asys1920.paymentservice.adapter.AccountingServiceAdapter;
+import com.asys1920.paymentservice.exceptions.BillAlreadyPaidException;
+import com.asys1920.paymentservice.exceptions.NoBillFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -14,13 +16,19 @@ public class PaymentService {
         this.accountingServiceAdapter = accountingServiceAdapter;
     }
 
-    public boolean isBillPaid(Long billId) {
-        return accountingServiceAdapter.getBill(billId).isPaid();
+    public void validateBillNeedsPayment(Bill bill) throws BillAlreadyPaidException, NoBillFoundException {
+        if (bill != null) {
+            if (bill.isPaid()) {
+                throw new BillAlreadyPaidException("The submitted bill is already payed.");
+            }
+        } else {
+            throw new NoBillFoundException("The submitted billId is unknown");
+        }
     }
 
-    public Bill handleSepaPayment(Long billId, String iban) {
-        Bill billToPay = accountingServiceAdapter.getBill(billId);
-        if(isIbanValid(iban)) {
+    public Bill handleSepaPayment(Long billId, String iban) throws BillAlreadyPaidException, NoBillFoundException {
+        Bill billToPay = getBill(billId);
+        if (isIbanValid(iban)) {
             billToPay.setPaid(true);
         }
         return accountingServiceAdapter.saveBill(billToPay);
@@ -61,12 +69,17 @@ public class PaymentService {
         return modulo.intValue() == 1;
     }
 
-    public Bill handlePaypalPayment(Long billId, String paypalParam) {
-        Bill billToPay = accountingServiceAdapter.getBill(billId);
-
-        if(isPayPalPaymentSuccessful(paypalParam.length())) {
+    public Bill handlePaypalPayment(Long billId, String paypalParam) throws BillAlreadyPaidException, NoBillFoundException {
+        Bill billToPay = getBill(billId);
+        if (isPayPalPaymentSuccessful(paypalParam.length())) {
             billToPay.setPaid(true);
         }
         return accountingServiceAdapter.saveBill(billToPay);
+    }
+
+    private Bill getBill(long billId) throws BillAlreadyPaidException, NoBillFoundException {
+        Bill bill = accountingServiceAdapter.getBill(billId);
+        validateBillNeedsPayment(bill);
+        return bill;
     }
 }
