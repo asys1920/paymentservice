@@ -19,10 +19,10 @@ public class PaymentService {
     public void validateBillNeedsPayment(Bill bill) throws BillAlreadyPaidException, NoBillFoundException {
         if (bill != null) {
             if (bill.isPaid()) {
-                throw new BillAlreadyPaidException();
+                throw new BillAlreadyPaidException("The submitted bill is already payed.");
             }
         } else {
-            throw new NoBillFoundException();
+            throw new NoBillFoundException("The submitted billId is unknown");
         }
     }
 

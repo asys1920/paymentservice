@@ -5,4 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "PaymentProvider not found!")
 public class ProviderNotFoundException extends Exception {
+    public ProviderNotFoundException(String message) {
+        super(message);
+    }
 }
