@@ -3,6 +3,7 @@ package com.asys1920.paymentservice.controller;
 import com.asys1920.model.Bill;
 import com.asys1920.paymentservice.exceptions.BillAlreadyPaidException;
 import com.asys1920.paymentservice.exceptions.MissingProviderInformationException;
+import com.asys1920.paymentservice.exceptions.NoBillFoundException;
 import com.asys1920.paymentservice.service.PaymentService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -31,31 +32,26 @@ public class PaymentController {
             @ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
     @PatchMapping(value = {"/pay"})
-    public ResponseEntity<Bill> payBill(@RequestBody PaymentRequest request) {
-
-        if(paymentService.isBillPaid(request.getBillId())) {
-            throw new BillAlreadyPaidException();
-        }
-        Bill returnBill = null;
-
+    public ResponseEntity<Bill> payBill(@RequestBody PaymentRequest request) throws BillAlreadyPaidException, NoBillFoundException {
         switch (request.getPaymentProvider()) {
             case SEPA:
-                if(request.getIban() == null || request.getIban().isEmpty()) {
+                if (request.getIban() == null || request.getIban().isEmpty()) {
                     throw new MissingProviderInformationException();
                 }
-                returnBill = paymentService.handleSepaPayment(request.getBillId(), request.getIban());
-                break;
+                return new ResponseEntity<>(
+                        paymentService.handleSepaPayment(request.getBillId(), request.getIban()),
+                        HttpStatus.OK);
             case PAYPAL:
-                if(request.getPaypalParam() == null || request.getPaypalParam().isEmpty()) {
+                if (request.getPaypalParam() == null || request.getPaypalParam().isEmpty()) {
                     throw new MissingProviderInformationException();
                 }
-                returnBill = paymentService.handlePaypalPayment(request.getBillId(), request.getPaypalParam());
-                break;
-            case NONE:
-                break;
+                return new ResponseEntity<>(paymentService.handlePaypalPayment(request.getBillId(),
+                        request.getPaypalParam()),
+                        HttpStatus.OK);
+            default:
+                throw new MissingProviderInformationException();
         }
 
-        return new ResponseEntity<>(returnBill, HttpStatus.OK);
     }
 
 
