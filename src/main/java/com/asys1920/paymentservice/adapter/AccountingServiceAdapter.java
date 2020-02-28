@@ -14,7 +14,7 @@ import javax.naming.ServiceUnavailableException;
 @Component
 public class AccountingServiceAdapter {
 
-    @Value("${accounting.url}")
+    @Value("${bill.url}")
     private String accountingServiceUrl;
     private final RestTemplate restTemplate;
 
