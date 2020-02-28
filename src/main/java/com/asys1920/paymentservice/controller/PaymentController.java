@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.naming.ServiceUnavailableException;
+
 @RestController
 public class PaymentController {
 
@@ -36,7 +38,7 @@ public class PaymentController {
             @ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
     @PatchMapping(value = {PATH})
-    public ResponseEntity<Bill> payBill(@RequestBody PaymentRequest request) throws BillAlreadyPaidException, NoBillFoundException, MissingProviderInformationException, ProviderNotFoundException {
+    public ResponseEntity<Bill> payBill(@RequestBody PaymentRequest request) throws BillAlreadyPaidException, NoBillFoundException, MissingProviderInformationException, ProviderNotFoundException, ServiceUnavailableException {
         LOG.trace(String.format("PATCH %s initiated", PATH));
         switch (request.getPaymentProvider()) {
             case SEPA:
