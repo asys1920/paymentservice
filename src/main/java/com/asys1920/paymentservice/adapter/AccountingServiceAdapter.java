@@ -12,8 +12,7 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class AccountingServiceAdapter {
 
-    //@Value("${accountingService.url}")
-    @Value("http://localhost:8085/bills/")
+    @Value("${accounting.url}")
     private String accountingServiceUrl;
     private final RestTemplate restTemplate;
 

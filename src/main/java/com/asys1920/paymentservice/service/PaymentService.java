@@ -4,6 +4,8 @@ import com.asys1920.model.Bill;
 import com.asys1920.paymentservice.adapter.AccountingServiceAdapter;
 import com.asys1920.paymentservice.exceptions.BillAlreadyPaidException;
 import com.asys1920.paymentservice.exceptions.NoBillFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -12,11 +14,14 @@ import java.math.BigInteger;
 public class PaymentService {
     private final AccountingServiceAdapter accountingServiceAdapter;
 
+    private static final Logger LOG = LoggerFactory.getLogger(AccountingServiceAdapter.class);
+
     public PaymentService(AccountingServiceAdapter accountingServiceAdapter) {
         this.accountingServiceAdapter = accountingServiceAdapter;
     }
 
     public void validateBillNeedsPayment(Bill bill) throws BillAlreadyPaidException, NoBillFoundException {
+        LOG.trace(String.format("SERVICE %s initiated", "validateBillNeedsPayment"));
         if (bill != null) {
             if (bill.isPaid()) {
                 throw new BillAlreadyPaidException("The submitted bill is already payed.");
@@ -27,6 +32,7 @@ public class PaymentService {
     }
 
     public Bill handleSepaPayment(Long billId, String iban) throws BillAlreadyPaidException, NoBillFoundException {
+        LOG.trace(String.format("SERVICE %s initiated", "handleSepaPayment"));
         Bill billToPay = getBill(billId);
         if (isIbanValid(iban)) {
             billToPay.setPaid(true);
@@ -40,7 +46,7 @@ public class PaymentService {
     }
 
     public boolean isIbanValid(String iban) {
-
+        LOG.trace(String.format("SERVICE %s %s initiated", "isIbanValid", iban));
         if (!(Character.isLetter(iban.charAt(0)) && Character.isLetter(iban.charAt(1)))) {
             return false;
         }
@@ -65,11 +71,12 @@ public class PaymentService {
 
         BigInteger ibanNumerical = new BigInteger(iban);
         BigInteger modulo = ibanNumerical.mod(new BigInteger("97"));
-
+        LOG.trace(String.format("SERVICE %s %s completed", "isIbanValid", iban));
         return modulo.intValue() == 1;
     }
 
     public Bill handlePaypalPayment(Long billId, String paypalParam) throws BillAlreadyPaidException, NoBillFoundException {
+        LOG.trace(String.format("SERVICE %s %s initiated", "handlePaypalPayment", paypalParam));
         Bill billToPay = getBill(billId);
         if (isPayPalPaymentSuccessful(paypalParam.length())) {
             billToPay.setPaid(true);
@@ -78,6 +85,7 @@ public class PaymentService {
     }
 
     private Bill getBill(long billId) throws BillAlreadyPaidException, NoBillFoundException {
+        LOG.trace(String.format("SERVICE %s initiated", "getBill"));
         Bill bill = accountingServiceAdapter.getBill(billId);
         validateBillNeedsPayment(bill);
         return bill;
