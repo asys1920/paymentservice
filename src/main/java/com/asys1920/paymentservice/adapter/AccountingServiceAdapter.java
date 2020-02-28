@@ -9,6 +9,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import javax.naming.ServiceUnavailableException;
+
 @Component
 public class AccountingServiceAdapter {
 
@@ -20,14 +22,22 @@ public class AccountingServiceAdapter {
         this.restTemplate = restTemplateBuilder.build();
     }
 
-    public Bill getBill(Long billId) {
-        BillDTO billDTO = restTemplate.getForObject(accountingServiceUrl + billId, BillDTO.class);
-        return BillMapper.INSTANCE.billDTOtoBill(billDTO);
+    public Bill getBill(Long billId) throws ServiceUnavailableException {
+        try {
+            BillDTO billDTO = restTemplate.getForObject(accountingServiceUrl + billId, BillDTO.class);
+            return BillMapper.INSTANCE.billDTOtoBill(billDTO);
+        } catch (Exception ex) {
+            throw new ServiceUnavailableException("AccountingService is currently unavailable. Please try again later.");
+        }
     }
 
-    public Bill saveBill(Bill bill) {
-        BillDTO billDTO = BillMapper.INSTANCE.billToBillDTO(bill);
-        HttpEntity<BillDTO> request = new HttpEntity<>(billDTO);
-        return BillMapper.INSTANCE.billDTOtoBill(restTemplate.postForObject(accountingServiceUrl, request, BillDTO.class));
+    public Bill saveBill(Bill bill) throws ServiceUnavailableException {
+        try {
+            BillDTO billDTO = BillMapper.INSTANCE.billToBillDTO(bill);
+            HttpEntity<BillDTO> request = new HttpEntity<>(billDTO);
+            return BillMapper.INSTANCE.billDTOtoBill(restTemplate.postForObject(accountingServiceUrl, request, BillDTO.class));
+        } catch (Exception ex) {
+            throw new ServiceUnavailableException("AccountingService is currently unavailable. Please try again later.");
+        }
     }
 }

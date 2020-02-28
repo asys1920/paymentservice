@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.naming.ServiceUnavailableException;
 import java.math.BigInteger;
 
 @Service
@@ -20,6 +21,12 @@ public class PaymentService {
         this.accountingServiceAdapter = accountingServiceAdapter;
     }
 
+    /**
+     * Validates that the bill needs payment
+     * @param bill the bill that gets validated
+     * @throws BillAlreadyPaidException gets thrown if the bill is already payed
+     * @throws NoBillFoundException gets thrown if there is no matching bill found
+     */
     public void validateBillNeedsPayment(Bill bill) throws BillAlreadyPaidException, NoBillFoundException {
         LOG.trace(String.format("SERVICE %s initiated", "validateBillNeedsPayment"));
         if (bill != null) {
@@ -31,7 +38,16 @@ public class PaymentService {
         }
     }
 
-    public Bill handleSepaPayment(Long billId, String iban) throws BillAlreadyPaidException, NoBillFoundException {
+    /**
+     * Handles the full process of a SEPA payment over the given iban for the given billid
+     * @param billId the id of the bill that gets paid
+     * @param iban the iban the bill is payed from
+     * @return the payed bill
+     * @throws BillAlreadyPaidException gets thrown if the bill is already payed
+     * @throws NoBillFoundException gets thrown if there is no matching bill found
+     * @throws ServiceUnavailableException gets thrown if the bill service is currently not available
+     */
+    public Bill handleSepaPayment(Long billId, String iban) throws BillAlreadyPaidException, NoBillFoundException, ServiceUnavailableException {
         LOG.trace(String.format("SERVICE %s initiated", "handleSepaPayment"));
         Bill billToPay = getBill(billId);
         if (isIbanValid(iban)) {
@@ -40,11 +56,21 @@ public class PaymentService {
         return accountingServiceAdapter.saveBill(billToPay);
     }
 
+    /**
+     * Checks if the paypal payment was successful
+     * @param magicNumber the argument that needs to be matched (SPOILER: it is 5)
+     * @return if the payment was successful
+     */
     public boolean isPayPalPaymentSuccessful(int magicNumber) {
         // Do Paypal Magic
         return magicNumber == 5;
     }
 
+    /**
+     * Checks if the submitted iban is in the right format
+     * @param iban the iban that gets checks
+     * @return
+     */
     public boolean isIbanValid(String iban) {
         LOG.trace(String.format("SERVICE %s %s initiated", "isIbanValid", iban));
         if (!(Character.isLetter(iban.charAt(0)) && Character.isLetter(iban.charAt(1)))) {
@@ -75,7 +101,16 @@ public class PaymentService {
         return modulo.intValue() == 1;
     }
 
-    public Bill handlePaypalPayment(Long billId, String paypalParam) throws BillAlreadyPaidException, NoBillFoundException {
+    /**
+     * Handles the full process of a PayPal payment over the given paypalParam for the given billid
+     * @param billId the id of the bill that gets paid
+     * @param paypalParam the PayPal the bill is payed with
+     * @return the payed bill
+     * @throws BillAlreadyPaidException gets thrown if the bill is already payed
+     * @throws NoBillFoundException gets thrown if there is no matching bill found
+     * @throws ServiceUnavailableException gets thrown if the bill service is currently not available
+     */
+    public Bill handlePaypalPayment(Long billId, String paypalParam) throws BillAlreadyPaidException, NoBillFoundException, ServiceUnavailableException {
         LOG.trace(String.format("SERVICE %s %s initiated", "handlePaypalPayment", paypalParam));
         Bill billToPay = getBill(billId);
         if (isPayPalPaymentSuccessful(paypalParam.length())) {
@@ -84,7 +119,15 @@ public class PaymentService {
         return accountingServiceAdapter.saveBill(billToPay);
     }
 
-    private Bill getBill(long billId) throws BillAlreadyPaidException, NoBillFoundException {
+    /**
+     * Retrieves a bill from the repository for the given id
+     * @param billId the id the bill is associated with
+     * @return the retrieved bill
+     * @throws BillAlreadyPaidException gets thrown if the bill is already payed
+     * @throws NoBillFoundException gets thrown if there is no bill known with the given id
+     * @throws ServiceUnavailableException gets thrown if the accounting service is currently unavailable
+     */
+    private Bill getBill(long billId) throws BillAlreadyPaidException, NoBillFoundException, ServiceUnavailableException {
         LOG.trace(String.format("SERVICE %s initiated", "getBill"));
         Bill bill = accountingServiceAdapter.getBill(billId);
         validateBillNeedsPayment(bill);
