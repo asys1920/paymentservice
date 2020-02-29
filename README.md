@@ -43,6 +43,13 @@ The default Port used by the application is `8082`. To set the Address the Micro
 listens on you can use the `PAYMENT_ADDRESS` environment variable, its default value is
 `localhost`.
 
+Furthermore, you can set the Addresses of the other microservices using the environment
+variables listed below:
+
+Environment Variable | Default Value
+--- | --- 
+`BILL_URL` | `http://localhost:8085/`
+
 ## API
 To see a full documentation view the swagger documentation while running the microservice. You can
 find the Swagger Documentation at `http://<host>:<port>/swagger-ui.html` 
